@@ -1,0 +1,447 @@
+{
+  "name": "Payslip Complete Workflow Final",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "57a7c73a-caa3-4868-b31d-7020dc45736b",
+      "name": "Monthly Schedule - 1st at 10 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -752,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "855c9a0d-e718-4f46-8f9a-0a2cafb1c5c4",
+      "name": "Loop Through Employees",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { message: '✅ All salary slips sent successfully!', timestamp: new Date().toISOString() } }];"
+      },
+      "id": "2e97328c-aad6-4143-9945-1a3db96e91e5",
+      "name": "All Emails Sent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const emp = items[0].json;\n\nfunction getField(...keys) {\n  for (const key of keys) {\n    if (key === undefined || key === null) continue;\n    if (Object.prototype.hasOwnProperty.call(emp, key) && emp[key] !== undefined && emp[key] !== null && emp[key] !== '') {\n      return emp[key];\n    }\n  }\n  return '';\n}\n\nfunction numberValue(value) {\n  if (value === undefined || value === null || value === '') return 0;\n  const parsed = parseFloat(String(value).replace(/,/g, '').trim());\n  return Number.isFinite(parsed) ? parsed : 0;\n}\n\nfunction round2(num) {\n  return Math.round((num + Number.EPSILON) * 100) / 100;\n}\n\nfunction formatMoney(num) {\n  return round2(num).toFixed(2);\n}\n\nfunction numberToWords(num) {\n  const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN',\n    'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN',\n    'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];\n  const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY',\n    'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];\n\n  function convert(n) {\n    if (n === 0) return '';\n    if (n < 20) return ones[n] + ' ';\n    if (n < 100) return tens[Math.floor(n / 10)] + ' ' + ones[n % 10] + ' ';\n    if (n < 1000) return ones[Math.floor(n / 100)] + ' HUNDRED ' + convert(n % 100);\n    if (n < 100000) return convert(Math.floor(n / 1000)) + 'THOUSAND ' + convert(n % 1000);\n    if (n < 10000000) return convert(Math.floor(n / 100000)) + 'LAKH ' + convert(n % 100000);\n    return convert(Math.floor(n / 10000000)) + 'CRORE ' + convert(n % 10000000);\n  }\n\n  return convert(Math.abs(Math.round(num))).trim() + ' ONLY';\n}\n\nconst basicSalary      = numberValue(getField('Basic Salary', 'basic_salary'));\nconst hra              = numberValue(getField('HRA', 'hra'));\nconst arrear           = numberValue(getField('Arrear', 'arrear'));\nconst pf               = numberValue(getField('PF', 'pf', 'EPF', 'epf'));\nconst esi              = numberValue(getField('ESI', 'esi'));\nconst advance          = numberValue(getField('Advance', 'advance'));\nconst voluntaryPf      = numberValue(getField('Voluntary PF', 'Voluntary pf', 'voluntary_pf'));\nconst professionalTax  = numberValue(getField('Professional Tax', 'professional_tax', 'PT', 'pt'));\nconst totalDeductions  = numberValue(getField('Total Deduction', 'total_deduction', 'deductions'));\nconst netSalary        = numberValue(getField('Net Salary', 'net_salary'));\nconst totalDays        = getField('TDays', 'total_days') || '';\nconst lwp              = getField('LWP', 'lwp') || '0';\n\nconst totalEarnings    = round2(basicSalary + hra + arrear);\nconst totalRate        = totalEarnings;\n\nreturn [{\n  json: {\n    row_number:          getField('row_number'),\n    branch:              getField('Branch', 'branch'),\n    employee_id:         getField('employee_id', 'Emp Code', 'employee code'),\n    employee_email:      getField('employee_email'),\n    employee_name:       getField('employee_name', 'Employee Name'),\n    father_spouse_name:  getField('father_spouse_name', 'Father/Spouse Name'),\n    designation:         getField('Designation', 'designation'),\n    department:          getField('Department', 'department'),\n    doj:                 getField('DOJ', 'doj'),\n    aadhar_no:           getField('Aadhar', 'AadharNo', 'aadhar_no'),\n    pan_no:              getField('PAN', 'PANNo', 'pan_no'),\n    uan:                 getField('UAN', 'uan'),\n    esi_no:              getField('ESI No', 'ESINo', 'esi_no'),\n    account_no:          getField('Account No', 'A/No.', 'account_no'),\n    bank_name:           getField('Bank Name', 'B.Name', 'bank_name'),\n    salary_month:        getField('salary_month'),\n    generated_date:      getField('generated_date'),\n    basic_salary:        formatMoney(basicSalary),\n    hra:                 formatMoney(hra),\n    arrear:              formatMoney(arrear),\n    total_rate:          formatMoney(totalRate),\n    total_earnings:      formatMoney(totalEarnings),\n    pf:                  formatMoney(pf),\n    esi:                 formatMoney(esi),\n    advance:             formatMoney(advance),\n    voluntary_pf:        formatMoney(voluntaryPf),\n    professional_tax:    formatMoney(professionalTax),\n    total_deductions:    formatMoney(totalDeductions),\n    net_salary:          formatMoney(netSalary),\n    net_salary_in_words: numberToWords(netSalary),\n    pd:                  String(getField('PD', 'pd') || '0'),\n    wo:                  String(getField('WO', 'wo') || '0'),\n    holiday:             String(getField('Holiday', 'holiday') || '0'),\n    cl:                  String(getField('CL', 'cl') || '0'),\n    pl:                  String(getField('PL', 'pl') || '0'),\n    co:                  String(getField('CO', 'co') || '0'),\n    rl:                  String(getField('RL', 'rl') || '0'),\n    wd:                  String(getField('WD', 'wd') || '0'),\n    lwp:                 String(lwp),\n    total_days:          String(totalDays || '')\n  }\n}];"
+      },
+      "id": "c7a9b80a-1f79-4621-a519-c220cbf85829",
+      "name": "Prepare Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = items[0];\nconst source = $('Prepare Payload').first().json;\nconst empId = source.employee_id || 'Payslip';\nconst month = String(source.salary_month || 'Month').replace(/[\\/:*?\"<>|]/g, '-');\n\nif (item.binary && item.binary.pdf) {\n  item.binary.pdf.fileName = `${empId}-${month}.pdf`;\n  item.binary.pdf.mimeType = 'application/pdf';\n}\n\nreturn [item];\n"
+      },
+      "id": "4c75d6e7-9250-4a34-a82d-9f41dffa74ad",
+      "name": "Rename PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Payload').item.json[\"employee_email\"] }}",
+        "subject": "=Your Salary Slip for {{ $('Prepare Payload').item.json[\"salary_month\"] }} – {{ $('Prepare Payload').item.json[\"employee_name\"] }}",
+        "message": "=<p>Dear {{ $('Prepare Payload').item.json[\"employee_name\"] }},</p>\n<p>Please find attached your salary slip for {{ $('Prepare Payload').item.json[\"salary_month\"] }}.</p>\n<p>Regards,<br>HR Team</p>",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "pdf"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1856,
+        128
+      ],
+      "id": "7996310a-d2ba-4674-880d-fdacea4c9758",
+      "name": "Send Salary Slip",
+      "webhookId": "0471f681-2bec-438a-b32b-2ae3b14371b2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YiNdFzTa2RcPYyjk",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "10oXi4Rc9TYNpbAD1fFRG18OrPcpydyrBpCSUGbn2zpc",
+          "mode": "list",
+          "cachedResultName": "Automatic-Payslip1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10oXi4Rc9TYNpbAD1fFRG18OrPcpydyrBpCSUGbn2zpc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11utY-U8trFeY3Fjm6_QduUVgjtUv3t1yjNNqjGVIq4E/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "Sent",
+            "row_number": "={{ $('Prepare Payload').item.json[\"row_number\"] }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2112,
+        128
+      ],
+      "id": "a7e93b67-7ac1-4f48-8c12-3ad105a10a8f",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tritXqeH4gVzLBqY",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "10oXi4Rc9TYNpbAD1fFRG18OrPcpydyrBpCSUGbn2zpc",
+          "mode": "list",
+          "cachedResultName": "Automatic-Payslip1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10oXi4Rc9TYNpbAD1fFRG18OrPcpydyrBpCSUGbn2zpc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10oXi4Rc9TYNpbAD1fFRG18OrPcpydyrBpCSUGbn2zpc/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Pending"
+            }
+          ]
+        },
+        "options": {
+          "returnAllMatches": "returnAllMatches"
+        }
+      },
+      "id": "e0973c22-c457-45f5-ae72-0dd617f631fa",
+      "name": "Fetch Employee Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.2,
+      "position": [
+        -416,
+        112
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "tritXqeH4gVzLBqY",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = items[0].json;\n\nfunction escapeHtml(value) {\n  return String(value ?? '')\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\"/g, '&quot;')\n    .replace(/'/g, '&#39;');\n}\n\nfunction salaryRow(name, rate, earning) {\n  return `<div class=\"salary-row\">\n    <span class=\"row-name\">${escapeHtml(name)}</span>\n    <span class=\"row-rate\">${escapeHtml(rate)}</span>\n    <span class=\"row-earn\">${escapeHtml(earning)}</span>\n    <span class=\"row-arr\">0.00</span>\n  </div>`;\n}\n\nfunction deductionRow(name, amount) {\n  return `<div class=\"ded-row\">\n    <span class=\"ded-name\">${escapeHtml(name)}</span>\n    <span class=\"ded-amt\">${escapeHtml(amount)}</span>\n  </div>`;\n}\n\nconst earningRows = [\n  salaryRow('Basic', data.basic_salary, data.basic_salary),\n  salaryRow('HRA', data.hra, data.hra),\n  salaryRow('Arrear', data.arrear, data.arrear),\n];\n\nconst deductionRows = [\n  deductionRow('PF', data.pf),\n  deductionRow('ESI', data.esi),\n  deductionRow('Advance', data.advance),\n  deductionRow('Voluntary PF', data.voluntary_pf),\n  deductionRow('Professional Tax', data.professional_tax),\n];\n\nconst replacements = {\n  ...data,\n  earning_rows: earningRows.join('\\n'),\n  deduction_rows: deductionRows.join('\\n'),\n};\n\nconst template = String.raw`<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <title>Pay Slip - HCA</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: Arial, Helvetica, sans-serif;\n      font-size: 11px;\n      color: #000;\n      background: #fff;\n      padding: 24px 28px;\n    }\n    .header {\n      display: flex;\n      justify-content: space-between;\n      align-items: flex-start;\n      margin-bottom: 4px;\n    }\n    .company-info h1 {\n      font-size: 15px;\n      font-weight: 700;\n      color: #000;\n      margin-bottom: 2px;\n    }\n    .company-info p {\n      font-size: 10px;\n      color: #444;\n    }\n    .logo-box { text-align: right; }\n    .logo-box img { height: 52px; object-fit: contain; }\n    .payslip-title {\n      font-size: 13px;\n      font-weight: 700;\n      margin: 8px 0 4px 0;\n      color: #000;\n    }\n    .details-table {\n      width: 100%;\n      border-collapse: collapse;\n      margin-bottom: 10px;\n    }\n    .details-table td {\n      padding: 3px 6px 3px 0;\n      vertical-align: top;\n      font-size: 10.5px;\n      line-height: 1.5;\n    }\n    .details-table td.label {\n      font-weight: 700;\n      width: 170px;\n      white-space: nowrap;\n      color: #000;\n    }\n    .details-table td.value {\n      color: #222;\n      width: 210px;\n    }\n    .details-table td.label2 {\n      font-weight: 700;\n      width: 95px;\n      white-space: nowrap;\n      color: #000;\n      padding-left: 20px;\n    }\n    .details-table td.value2 {\n      color: #222;\n      width: 170px;\n    }\n    .details-table td.label3 {\n      font-weight: 700;\n      width: 55px;\n      white-space: nowrap;\n      color: #000;\n      padding-left: 10px;\n    }\n    .details-table td.value3 { color: #222; }\n    hr {\n      border: none;\n      border-top: 1px solid #000;\n      margin: 0 0 8px 0;\n    }\n    .salary-section {\n      display: flex;\n      gap: 0;\n      border: 1px solid #ccc;\n      margin-bottom: 10px;\n    }\n    .earnings-col {\n      flex: 1;\n      border-right: 1px solid #ccc;\n    }\n    .deductions-col { flex: 1; }\n    .section-header {\n      display: flex;\n      align-items: center;\n      padding: 5px 8px;\n      border-bottom: 1px solid #ccc;\n      background: #f9f9f9;\n    }\n    .section-header .sec-title {\n      font-weight: 700;\n      font-size: 11px;\n    }\n    .section-header .sec-currency {\n      margin-left: 4px;\n      font-size: 11px;\n    }\n    .col-headers, .ded-col-headers {\n      display: flex;\n      padding: 4px 8px;\n      border-bottom: 1px dashed #ccc;\n      background: #fff;\n    }\n    .col-headers span, .ded-col-headers span {\n      font-weight: 700;\n      font-size: 10px;\n      color: #333;\n    }\n    .col-head-name { flex: 2; }\n    .col-head-rate { flex: 1.2; text-align: right; }\n    .col-head-earn { flex: 1; text-align: right; }\n    .col-head-arr  { flex: 1; text-align: right; }\n    .salary-row, .ded-row {\n      display: flex;\n      padding: 4px 8px;\n      border-bottom: 1px dashed #eee;\n      align-items: center;\n    }\n    .salary-row .row-name { flex: 2; font-size: 10.5px; }\n    .salary-row .row-rate { flex: 1.2; text-align: right; font-size: 10.5px; }\n    .salary-row .row-earn { flex: 1; text-align: right; font-size: 10.5px; }\n    .salary-row .row-arr  { flex: 1; text-align: right; font-size: 10.5px; }\n    .ded-head-name { flex: 2; }\n    .ded-head-amt  { flex: 1; text-align: right; }\n    .ded-row .ded-name { flex: 2; font-size: 10.5px; }\n    .ded-row .ded-amt  { flex: 1; text-align: right; font-size: 10.5px; }\n    .total-row, .ded-total-row {\n      display: flex;\n      padding: 5px 8px;\n      background: #f9f9f9;\n      border-top: 1px solid #ccc;\n    }\n    .total-row .row-name, .ded-total-row .ded-name {\n      flex: 2;\n      font-weight: 700;\n      font-size: 10.5px;\n    }\n    .total-row .row-rate {\n      flex: 1.2;\n      text-align: right;\n      font-weight: 700;\n      font-size: 10.5px;\n    }\n    .total-row .row-earn, .ded-total-row .ded-amt {\n      flex: 1;\n      text-align: right;\n      font-weight: 700;\n      font-size: 10.5px;\n    }\n    .total-row .row-arr {\n      flex: 1;\n      text-align: right;\n      font-weight: 700;\n      font-size: 10.5px;\n    }\n    .net-area {\n      display: flex;\n      border: 1px solid #ccc;\n      border-top: none;\n      margin-bottom: 10px;\n    }\n    .net-total-earn {\n      flex: 1;\n      border-right: 1px solid #ccc;\n      padding: 6px 8px;\n      font-size: 10.5px;\n    }\n    .net-total-earn span:first-child {\n      font-weight: 700;\n    }\n    .net-pay-box {\n      flex: 1;\n      padding: 6px 8px;\n      display: flex;\n      align-items: center;\n      gap: 16px;\n    }\n    .net-pay-box .net-label {\n      font-weight: 700;\n      font-size: 10.5px;\n    }\n    .net-pay-box .net-value {\n      font-size: 12px;\n      font-weight: 700;\n      color: #000;\n    }\n    .in-words {\n      border: 1px solid #ccc;\n      padding: 6px 8px;\n      font-size: 10.5px;\n      margin-bottom: 8px;\n    }\n    .in-words .words-label {\n      font-weight: 700;\n      margin-right: 10px;\n    }\n    .system-note {\n      font-size: 10px;\n      color: #444;\n      margin-bottom: 16px;\n    }\n    .footer {\n      text-align: center;\n      font-size: 9px;\n      color: #888;\n      margin-top: 24px;\n    }\n    .footer strong { color: #8B0000; }\n  </style>\n</head>\n<body>\n  <div class=\"header\">\n    <div class=\"company-info\">\n      <h1>Hari Chand Anand &amp; Co.</h1>\n      <p>A-94/1 OKHLA PH-II, New Delhi 110020</p>\n    </div>\n    <div class=\"logo-box\">\n      <img src=\"https://www.grouphca.com/cdn/shop/files/logo_1_280x.png?v=1722238275\" alt=\"HCA Logo\" style=\"height:64px; width:auto; object-fit:contain;\" />\n    </div>\n  </div>\n\n  <div class=\"payslip-title\">Pay Slip For the Month of {{salary_month}}</div>\n\n  <hr />\n\n  <table class=\"details-table\">\n    <tr>\n      <td class=\"label\">Emp Code</td>\n      <td class=\"value\">{{employee_id}}</td>\n      <td class=\"label2\">ESINO</td>\n      <td class=\"value2\">{{esi_no}}</td>\n      <td class=\"label3\">PD</td>\n      <td class=\"value3\">{{pd}}</td>\n    </tr>\n    <tr>\n      <td class=\"label\">Employee Name</td>\n      <td class=\"value\">{{employee_name}}</td>\n      <td class=\"label2\">AadharNo</td>\n      <td class=\"value2\">{{aadhar_no}}</td>\n      <td class=\"label3\">WO</td>\n      <td class=\"value3\">{{wo}}</td>\n    </tr>\n    <tr>\n      <td class=\"label\">Father/Spouse Name</td>\n      <td class=\"value\">{{father_spouse_name}}</td>\n      <td class=\"label2\">PANNo</td>\n      <td class=\"value2\">{{pan_no}}</td>\n      <td class=\"label3\">Holiday</td>\n      <td class=\"value3\">{{holiday}}</td>\n    </tr>\n    <tr>\n      <td class=\"label\">Designation</td>\n      <td class=\"value\">{{designation}}</td>\n      <td class=\"label2\">A/No.</td>\n      <td class=\"value2\">{{account_no}}</td>\n      <td class=\"label3\">CL</td>\n      <td class=\"value3\">{{cl}}</td>\n    </tr>\n    <tr>\n      <td class=\"label\">Department</td>\n      <td class=\"value\">{{department}}</td>\n      <td class=\"label2\">B.Name</td>\n      <td class=\"value2\">{{bank_name}}</td>\n      <td class=\"label3\">RL</td>\n      <td class=\"value3\">{{rl}}</td>\n    </tr>\n    <tr>\n      <td class=\"label\">UAN</td>\n      <td class=\"value\">{{uan}}</td>\n      <td class=\"label2\">TDays</td>\n      <td class=\"value2\">{{total_days}}</td>\n      <td class=\"label3\">CO</td>\n      <td class=\"value3\">{{co}}</td>\n    </tr>\n    <tr>\n      <td class=\"label\">Branch</td>\n      <td class=\"value\">{{branch}}</td>\n      <td class=\"label2\">LWP</td>\n      <td class=\"value2\">{{lwp}}</td>\n      <td class=\"label3\">WD</td>\n      <td class=\"value3\">{{wd}}</td>\n    </tr>\n    <tr>\n      <td class=\"label\">DOJ</td>\n      <td class=\"value\">{{doj}}</td>\n      <td class=\"label2\">PL</td>\n      <td class=\"value2\">{{pl}}</td>\n      <td class=\"label3\"></td>\n      <td class=\"value3\"></td>\n    </tr>\n  </table>\n\n  <div class=\"salary-section\">\n    <div class=\"earnings-col\">\n      <div class=\"section-header\">\n        <span class=\"sec-title\">Earnings (A)</span>\n        <span class=\"sec-currency\">&nbsp;&#8377;</span>\n      </div>\n      <div class=\"col-headers\">\n        <span class=\"col-head-name\">Earning Heads</span>\n        <span class=\"col-head-rate\">Rate of Salary</span>\n        <span class=\"col-head-earn\">Earnings</span>\n        <span class=\"col-head-arr\">Arrears</span>\n      </div>\n      {{earning_rows}}\n      <div class=\"total-row\">\n        <span class=\"row-name\">Total Earning</span>\n        <span class=\"row-rate\">{{total_rate}}</span>\n        <span class=\"row-earn\">{{total_earnings}}</span>\n        <span class=\"row-arr\">0.00</span>\n      </div>\n    </div>\n\n    <div class=\"deductions-col\">\n      <div class=\"section-header\">\n        <span class=\"sec-title\">Other Deductions</span>\n      </div>\n      <div class=\"ded-col-headers\">\n        <span class=\"ded-head-name\">&nbsp;</span>\n        <span class=\"ded-head-amt\">Amount</span>\n      </div>\n      {{deduction_rows}}\n      <div class=\"ded-total-row\">\n        <span class=\"ded-name\">Total Deduction</span>\n        <span class=\"ded-amt\">{{total_deductions}}</span>\n      </div>\n    </div>\n  </div>\n\n  <div class=\"net-area\">\n    <div class=\"net-total-earn\">\n      <span>Total Earning</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\n      <span>{{total_earnings}}</span>\n    </div>\n    <div class=\"net-pay-box\">\n      <span class=\"net-label\">Net Payable</span>\n      <span class=\"net-value\">{{net_salary}}</span>\n    </div>\n  </div>\n\n  <div class=\"in-words\">\n    <span class=\"words-label\">In Words</span>\n    <span>&#8377; {{net_salary_in_words}}</span>\n  </div>\n\n  <div class=\"system-note\">\n    This document is system-generated and does not require an authorized signature.\n  </div>\n\n  <div class=\"footer\">\n    Powered by <strong>Hari Chand Anand &amp; Co.</strong>\n  </div>\n</body>\n</html>`;\n\nconst rawHtmlKeys = new Set(['earning_rows', 'deduction_rows']);\n\nconst html = template.replace(/{{\\s*([a-zA-Z0-9_]+)\\s*}}/g, (_, key) => {\n  const value = replacements[key] ?? '';\n  return rawHtmlKeys.has(key) ? String(value) : escapeHtml(value);\n});\n\nreturn [{\n  json: {\n    ...data,\n    html\n  }\n}];"
+      },
+      "id": "cf903a2c-bb81-4bee-8176-14714e1d86de",
+      "name": "Build HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "html",
+        "options": {
+          "encoding": "utf8",
+          "fileName": "=index.html"
+        }
+      },
+      "id": "e7b4bdf0-ff45-4be1-873d-bb10428f3f95",
+      "name": "Convert HTML to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        848,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/forms/chromium/convert/html",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "paperWidth",
+              "value": "8.27"
+            },
+            {
+              "name": "paperHeight",
+              "value": "11.69"
+            },
+            {
+              "name": "marginTop",
+              "value": "0.2"
+            },
+            {
+              "name": "marginBottom",
+              "value": "0.2"
+            },
+            {
+              "name": "marginLeft",
+              "value": "0.2"
+            },
+            {
+              "name": "marginRight",
+              "value": "0.2"
+            },
+            {
+              "name": "printBackground",
+              "value": "true"
+            },
+            {
+              "name": "emulatedMediaType",
+              "value": "screen"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "pdf"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "59110748-839b-43ae-af47-d62ece62157f",
+      "name": "Generate PDF (Gotenberg)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        -80
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Monthly Schedule - 1st at 10 AM": {
+      "main": [
+        [
+          {
+            "node": "Fetch Employee Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Employee Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Through Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Through Employees": {
+      "main": [
+        [
+          {
+            "node": "All Emails Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Payload": {
+      "main": [
+        [
+          {
+            "node": "Build HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build HTML": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to File": {
+      "main": [
+        [
+          {
+            "node": "Generate PDF (Gotenberg)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PDF (Gotenberg)": {
+      "main": [
+        [
+          {
+            "node": "Rename PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Salary Slip": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Through Employees",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename PDF": {
+      "main": [
+        [
+          {
+            "node": "Send Salary Slip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "016d3ea1-df48-479a-a16c-2bd090ad32c0",
+  "meta": {
+    "instanceId": "68a251423bbf1a1fb243908498854747fefc044b5c9e85fe6f46913b8c6bfc64"
+  },
+  "id": "n56WjKuVFvp2x2rY",
+  "tags": []
+}
