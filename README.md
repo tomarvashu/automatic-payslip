@@ -16,7 +16,15 @@ It:
 - sends the payslip by email through Gmail
 - updates the employee row in Google Sheets to `Sent`
 
-The uploaded workflow file is named **`Payslip Complete Workflow Final.json`** and includes the full end-to-end flow, including schedule trigger, payload preparation, HTML generation, PDF conversion, email sending, and sheet status update. 
+The uploaded workflow file is named **`Payslip Complete Workflow Final.json`** and includes the full end-to-end flow, including schedule trigger, payload preparation, HTML generation, PDF conversion, email sending, and sheet status update.
+
+---
+
+## My Role
+
+I initiated this workflow and defined the business logic, payroll data flow, and practical use case it was designed to support.
+
+As my role later expanded into broader Operations & Technology leadership, my contribution shifted more toward workflow direction, testing, refinement, and execution oversight. Development and implementation were carried forward with support from my internal team, while I remained involved in shaping the system logic, usability, and practical execution flow.
 
 ---
 
@@ -56,7 +64,7 @@ The workflow standardizes payroll fields, calculates values, formats numbers, an
 - net salary
 - net salary in words
 
-This logic is handled in the **Prepare Payload** code node. :contentReference[oaicite:1]{index=1}
+This logic is handled in the **Prepare Payload** code node.
 
 ### 5. Build Payslip HTML
 The workflow builds a complete HTML salary slip template with:
@@ -69,7 +77,7 @@ The workflow builds a complete HTML salary slip template with:
 - amount in words
 - system-generated footer
 
-This is done in the **Build HTML** node. :contentReference[oaicite:2]{index=2}
+This is done in the **Build HTML** node.
 
 ### 6. Convert HTML to PDF
 The HTML is converted into a PDF file using:
@@ -84,7 +92,7 @@ The generated PDF file is renamed dynamically using:
 - salary month
 
 ### 8. Send Salary Slip
-The PDF is emailed to each employee using Gmail with a dynamic subject and message. The **Send Salary Slip** node uses the `employee_email`, `salary_month`, and `employee_name` fields from the prepared payload. :contentReference[oaicite:3]{index=3}
+The PDF is emailed to each employee using Gmail with a dynamic subject and message. The **Send Salary Slip** node uses the `employee_email`, `salary_month`, and `employee_name` fields from the prepared payload.
 
 ### 9. Update Delivery Status
 After sending the email, the workflow updates the corresponding row in Google Sheets:
@@ -167,7 +175,7 @@ The workflow also supports attendance- and leave-related fields such as:
 - `LWP`
 - `TDays`
 
-These are mapped inside the **Prepare Payload** node. :contentReference[oaicite:4]{index=4}
+These are mapped inside the **Prepare Payload** node.
 
 ---
 
@@ -203,12 +211,6 @@ For each employee, the workflow produces:
 - one PDF payslip
 - one email sent to the employee
 - one Google Sheet row updated from `Pending` to `Sent`
-
----
-
-## My Role
-
-I initiated this workflow, defined the business logic, structured the payroll data flow, and actively contributed to the design and refinement of the system. Development and implementation were carried out with support from my internal team, while I remained involved in testing, iteration, and execution review.
 
 ---
 
